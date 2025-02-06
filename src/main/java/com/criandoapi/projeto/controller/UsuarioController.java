@@ -1,18 +1,15 @@
 package com.criandoapi.projeto.controller;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.*;
 
 import com.criandoapi.projeto.model.Usuario;
 import com.criandoapi.projeto.service.UsuarioService;
@@ -34,12 +31,12 @@ public class UsuarioController {
 	}
 
 	@PostMapping
-	public ResponseEntity<Usuario> criarUsuario(@RequestBody Usuario usuario) {
+	public ResponseEntity<Usuario> criarUsuario(@Valid @RequestBody Usuario usuario) {
 		return ResponseEntity.status(201).body(usuarioService.criarUsuario(usuario));
 	}
 
 	@PutMapping
-	public ResponseEntity<Usuario> editarUsuario(@RequestBody Usuario usuario) {
+	public ResponseEntity<Usuario> editarUsuario(@Valid @RequestBody Usuario usuario) {
 		return ResponseEntity.status(200).body(usuarioService.editarUsuario(usuario));
 	}
 
@@ -50,12 +47,26 @@ public class UsuarioController {
 	}
 
 	@PostMapping("/login")
-	public ResponseEntity<Usuario> validarSenha(@RequestBody Usuario usuario) {
+	public ResponseEntity<Usuario> validarSenha(@Valid @RequestBody Usuario usuario) {
 		Boolean validar = usuarioService.validarSenha(usuario);
 		if (!validar) {
 			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 		}
 		return ResponseEntity.status(200).build();
+	}
+
+	@ResponseStatus(HttpStatus.BAD_REQUEST)
+	@ExceptionHandler(MethodArgumentNotValidException.class)
+	public Map<String, String> handlevalidationException(MethodArgumentNotValidException ex) {
+		Map<String, String> errors = new HashMap<>();
+
+		ex.getBindingResult().getAllErrors().forEach((error) -> {
+			String fieldName = ((FieldError) error).getField();
+			String errorMessage = error.getDefaultMessage();
+			errors.put(fieldName, errorMessage);
+		});
+
+		return errors;
 	}
 
 }
